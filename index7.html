@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paste & Save Image</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0e12;
+      --surface: #18181f;
+      --border: #2a2a35;
+      --accent: #00e5a0;
+      --accent2: #00b8ff;
+      --text: #e8e8f0;
+      --muted: #6b6b80;
+      --danger: #ff4f6a;
+      --success: #00e5a0;
+      --radius: 14px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 20px 40px;
+      background-image:
+        radial-gradient(ellipse 60% 40% at 70% 0%, rgba(0,229,160,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 35% at 10% 80%, rgba(0,184,255,0.06) 0%, transparent 55%);
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    header h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1.2rem, 4vw, 1.6rem);
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 5px;
+    }
+
+    /* ── Drop Zone ── */
+    #drop-zone {
+      width: 100%;
+      max-width: 520px;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 36px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.25s, background 0.25s, transform 0.15s;
+      position: relative;
+    }
+
+    #drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(0,229,160,0.06);
+      transform: scale(1.01);
+    }
+
+    #drop-zone .icon {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    #drop-zone h2 {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.95rem;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    #drop-zone p {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── Mobile paste input ── */
+    .paste-row {
+      width: 100%;
+      max-width: 520px;
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    #paste-area {
+      flex: 1;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 16px;
+      font-size: 0.85rem;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      cursor: text;
+      transition: border-color 0.2s;
+      min-height: 46px;
+    }
+
+    #paste-area:empty::before {
+      content: attr(data-placeholder);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    #paste-area:focus {
+      border-color: var(--accent);
+    }
+
+    /* ── Format selector ── */
+    .options-row {
+      width: 100%;
+      max-width: 520px;
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .options-row label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .options-row select {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .options-row select:focus { border-color: var(--accent); }
+
+    /* ── Preview card ── */
+    #preview-card {
+      display: none;
+      width: 100%;
+      max-width: 520px;
+      margin-top: 22px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      animation: fadeUp 0.3s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    #preview-card img {
+      width: 100%;
+      max-height: 340px;
+      object-fit: contain;
+      display: block;
+      background: #111;
+    }
+
+    .preview-meta {
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .meta-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .meta-info .filename {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--accent);
+      word-break: break-all;
+    }
+
+    .meta-info .dims {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .btn-download {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-download:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-download:active { transform: translateY(0); }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 30px;
+      padding: 11px 22px;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 999;
+      white-space: nowrap;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    #toast.success { border-color: var(--success); color: var(--success); }
+    #toast.error   { border-color: var(--danger);  color: var(--danger);  }
+
+    /* ── ARIA live region ── */
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      overflow: hidden; clip: rect(0,0,0,0);
+    }
+  </style>
+</head>
+<body>
+
+  <div aria-live="polite" class="sr-only" id="live-region"></div>
+
+  <header>
+    <h1>⌨ Paste & Save</h1>
+    <p>Screenshot → instant download</p>
+  </header>
+
+  <!-- Drop / Paste zone -->
+  <div id="drop-zone" role="button" tabindex="0" aria-label="Paste or drop image here">
+    <span class="icon">🖼</span>
+    <h2>Paste or Drop Your Image</h2>
+    <p>
+      <strong>Desktop:</strong> Copy a screenshot, then press <kbd>Ctrl+V</kbd> / <kbd>Cmd+V</kbd><br>
+      <strong>Mobile:</strong> Use the box below → long-press → Paste<br>
+      <strong>Any device:</strong> Drag &amp; drop an image file here
+    </p>
+  </div>
+
+  <!-- Mobile-friendly contenteditable paste target -->
+  <div class="paste-row">
+    <div
+      id="paste-area"
+      contenteditable="true"
+      role="textbox"
+      aria-label="Mobile paste target"
+      data-placeholder="📱 Mobile: tap & hold here → Paste"
+    ></div>
+  </div>
+
+  <!-- Format options -->
+  <div class="options-row">
+    <label>
+      File Name:
+      <select id="filename-type">
+        <option value="screenshot">Screenshot_Date</option>
+        <option value="picture-6">Picture_###### (6 digits)</option>
+        <option value="picture-18">Picture_################## (18 digits)</option>
+        <option value="picture-36">Picture_#################################### (36 digits)</option>
+        <option value="picture-50">Picture_################################################## (50 digits)</option>
+      </select>
+    </label>
+    <label>
+      Format:
+      <select id="format-select">
+        <option value="image/png">PNG</option>
+        <option value="image/jpeg">JPEG</option>
+        <option value="image/webp">WebP</option>
+      </select>
+    </label>
+    <label id="quality-wrapper" style="display:none;">
+      Quality:
+      <select id="quality-select">
+        <option value="0.95">High (95%)</option>
+        <option value="0.80">Medium (80%)</option>
+        <option value="0.60">Low (60%)</option>
+      </select>
+    </label>
+  </div>
+
+  <!-- Preview + download -->
+  <div id="preview-card" role="region" aria-label="Image preview">
+    <img id="preview-img" alt="Pasted image preview" />
+    <div class="preview-meta">
+      <div class="meta-info">
+        <span class="filename" id="meta-filename">—</span>
+        <span class="dims"    id="meta-dims">—</span>
+      </div>
+      <button class="btn-download" id="btn-download">⬇ Download</button>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // ── State ────────────────────────────────────────────────
+    let currentBlob = null;
+
+    // ── Helpers ──────────────────────────────────────────────
+    function timestamp() {
+      const n = new Date(), p = v => String(v).padStart(2,'0');
+      return `${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}_${p(n.getHours())}-${p(n.getMinutes())}-${p(n.getSeconds())}`;
+    }
+
+    function randomDigits(length) {
+      let result = '';
+      for (let i = 0; i < length; i++) {
+        result += Math.floor(Math.random() * 10);
+      }
+      return result;
+    }
+
+    function generateFilename(fmt) {
+      const type = document.getElementById('filename-type').value;
+      const ext = extFor(fmt);
+      
+      if (type === 'screenshot') {
+        return `Screenshot_${timestamp()}.${ext}`;
+      } else if (type === 'picture-6') {
+        return `Picture_${randomDigits(6)}.${ext}`;
+      } else if (type === 'picture-18') {
+        return `Picture_${randomDigits(18)}.${ext}`;
+      } else if (type === 'picture-36') {
+        return `Picture_${randomDigits(36)}.${ext}`;
+      } else if (type === 'picture-50') {
+        return `Picture_${randomDigits(50)}.${ext}`;
+      }
+      // Default fallback
+      return `Picture_${randomDigits(6)}.${ext}`;
+    }
+
+    function extFor(mime) {
+      return { 'image/png':'png', 'image/jpeg':'jpg', 'image/webp':'webp' }[mime] || 'png';
+    }
+
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.textContent = (type === 'success' ? '✓ ' : '✗ ') + msg;
+      t.className = 'show ' + type;
+      document.getElementById('live-region').textContent = msg;
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => { t.className = ''; }, 2800);
+    }
+
+    // Validate MIME is a safe raster image type
+    function isSafeImage(mime) {
+      return ['image/png','image/jpeg','image/gif','image/webp','image/bmp'].includes(mime);
+    }
+
+    function convertAndShow(blob) {
+      if (!isSafeImage(blob.type)) {
+        showToast('Unsupported or unsafe image type.', 'error');
+        return;
+      }
+
+      const fmt     = document.getElementById('format-select').value;
+      const quality = parseFloat(document.getElementById('quality-select').value);
+      const url     = URL.createObjectURL(blob);
+
+      // Draw onto canvas to re-encode in chosen format
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width  = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (fmt === 'image/jpeg') { ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); }
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+
+        canvas.toBlob(outBlob => {
+          currentBlob = outBlob;
+          const outUrl = URL.createObjectURL(outBlob);
+
+          // Show preview
+          const previewImg = document.getElementById('preview-img');
+          previewImg.src = outUrl;
+
+          const fname = generateFilename(fmt);
+          document.getElementById('meta-filename').textContent = fname;
+          document.getElementById('meta-dims').textContent =
+            `${img.naturalWidth} × ${img.naturalHeight} px · ${(outBlob.size/1024).toFixed(1)} KB`;
+
+          document.getElementById('preview-card').style.display = 'block';
+          document.getElementById('preview-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+          // Auto-download
+          triggerDownload(outUrl, fname);
+          showToast('Image saved — ' + fname);
+        }, fmt, quality);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); showToast('Could not load image.', 'error'); };
+      img.src = url;
+    }
+
+    function triggerDownload(url, fname) {
+      const a = document.createElement('a');
+      a.href = url; a.download = fname;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // Manual download button (re-downloads with current format/quality)
+    document.getElementById('btn-download').addEventListener('click', () => {
+      if (!currentBlob) return;
+      const fmt   = document.getElementById('format-select').value;
+      const fname = generateFilename(fmt);
+      const url   = URL.createObjectURL(currentBlob);
+      triggerDownload(url, fname);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      showToast('Re-downloaded!');
+    });
+
+    // Show/hide quality for lossy formats
+    document.getElementById('format-select').addEventListener('change', e => {
+      document.getElementById('quality-wrapper').style.display =
+        ['image/jpeg','image/webp'].includes(e.target.value) ? 'flex' : 'none';
+    });
+
+    // ── Extract image from clipboard items ───────────────────
+    function extractFromClipboard(items) {
+      for (const item of items) {
+        if (isSafeImage(item.type)) return item.getAsFile();
+      }
+      return null;
+    }
+
+    // ── Global paste listener (desktop Ctrl+V) ───────────────
+    document.addEventListener('paste', e => {
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      const blob  = extractFromClipboard(Array.from(items));
+      if (blob) { e.preventDefault(); convertAndShow(blob); }
+      // Clear contenteditable
+      setTimeout(() => { document.getElementById('paste-area').innerHTML = ''; }, 10);
+    });
+
+    // ── contenteditable paste (mobile) ───────────────────────
+    document.getElementById('paste-area').addEventListener('paste', e => {
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      const blob  = extractFromClipboard(Array.from(items));
+      if (blob) { e.preventDefault(); convertAndShow(blob); }
+      setTimeout(() => { document.getElementById('paste-area').innerHTML = ''; }, 10);
+    });
+
+    // ── Drag & drop ──────────────────────────────────────────
+    const zone = document.getElementById('drop-zone');
+
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', ()  => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      const file = Array.from(e.dataTransfer.files).find(f => isSafeImage(f.type));
+      if (file) convertAndShow(file);
+      else showToast('Please drop an image file.', 'error');
+    });
+
+    // Keyboard activation for drop zone
+    zone.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') document.getElementById('paste-area').focus();
+    });
+  </script>
+</body>
+</html>

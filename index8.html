@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paste and Save Image (Mobile Friendly)</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; /* Reduced padding for mobile screens */
+            background-color: #f4f7f6; 
+        }
+        .instruction { 
+            padding: 25px; 
+            border: 2px dashed #28a745; 
+            background: white; 
+            border-radius: 12px; 
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+        }
+        /* New styling for the mobile paste input */
+        .mobile-input-container {
+            margin-top: 20px;
+            width: 100%;
+        }
+        #mobile-paste-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            box-sizing: border-box;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        #mobile-paste-input:focus {
+            border-color: #0056b3;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
+        }
+        #preview { 
+            max-width: 100%; /* Responsive for mobile */
+            max-height: 400px;
+            margin-top: 25px; 
+            border-radius: 8px;
+            border: 1px solid #ddd; 
+            display: none; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="instruction">
+        <h2>Paste Your Image Here</h2>
+        <p><strong>Desktop:</strong> Press <code>Ctrl + V</code> (or <code>Cmd + V</code>)</p>
+        
+        <div class="mobile-input-container">
+            <p><strong>Mobile:</strong> Long-press the box below and select "Paste"</p>
+            <input type="text" id="mobile-paste-input" placeholder="Tap and hold here to paste... (Screenshot.png)" autocomplete="off">
+        </div>
+    </div>
+    
+    <img id="preview" alt="Clipboard Preview" />
+
+    <script>
+        function getFormattedTimestamp() {
+            const now = new Date();
+            const pad = (num) => String(num).padStart(2, '0');
+
+            const year = now.getFullYear();
+            const month = pad(now.getMonth() + 1);
+            const day = pad(now.getDate());
+            const hours = pad(now.getHours());
+            const minutes = pad(now.getMinutes());
+            const seconds = pad(now.getSeconds());
+
+            return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
+        }
+
+        document.addEventListener('paste', function(event) {
+            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+            let imageBlob = null;
+
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    imageBlob = items[i].getAsFile();
+                    break;
+                }
+            }
+
+            if (imageBlob) {
+                // Prevent the image string/text from actually pasting into the input field
+                event.preventDefault(); 
+
+                const imageUrl = URL.createObjectURL(imageBlob);
+                
+                const previewElement = document.getElementById('preview');
+                previewElement.src = imageUrl;
+                previewElement.style.display = 'block';
+
+                const downloadLink = document.createElement('a');
+                downloadLink.href = imageUrl;
+
+                const fileName = `Screenshot_${getFormattedTimestamp()}.png`;
+                downloadLink.download = fileName;
+
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                
+                setTimeout(() => URL.revokeObjectURL(imageUrl), 1000);
+            }
+            
+            // Clear the input field just in case any text was pasted
+            setTimeout(() => {
+                const inputField = document.getElementById('mobile-paste-input');
+                if (inputField) inputField.value = '';
+            }, 10);
+        });
+    </script>
+</body>
+</html>

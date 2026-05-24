@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Launcher Pro - 10 Buttons</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #2ecc71;
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+        }
+
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .dashboard {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+
+        h2 { text-align: center; margin-bottom: 30px; color: #444; font-weight: 700; }
+
+        /* Khu vực nhập tùy chỉnh */
+        .custom-area {
+            background: #f1f3f5;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .btn-go {
+            background-color: var(--secondary-color);
+            color: white;
+            font-weight: bold;
+            padding: 0 25px;
+        }
+
+        /* Lưới 10 nút */
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+        }
+
+        button { 
+            padding: 15px 10px; 
+            font-size: 14px; 
+            font-weight: 600;
+            cursor: pointer; 
+            background-color: white; 
+            color: #555; 
+            border: 1px solid #eee; 
+            border-radius: 10px; 
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        button:hover { 
+            background-color: var(--primary-color); 
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+            border-color: var(--primary-color);
+        }
+
+        /* Màu riêng cho một số nút đặc biệt */
+        .btn-main { background-color: #fff5f5; border-color: #feb2b2; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <h2>🚀 Web Launcher Pro</h2>
+
+        <div class="custom-area">
+            <input type="text" id="urlInput" placeholder="Enter Website (example: google.com.vn)">
+            <button class="btn-go" onclick="launchCustom()">Open</button>
+        </div>
+
+        <div class="button-grid">
+            <button onclick="launch('https://google.com', 'w1')">🔍 Google</button>
+            <button onclick="launch('https://youtube.com', 'w2')">📺 YouTube</button>
+            <button onclick="launch('https://facebook.com', 'w3')">👥 Facebook</button>
+            <button onclick="launch('https://github.com', 'w4')">💻 GitHub</button>
+            <button onclick="launch('https://wikipedia.org', 'w5')">📖 Wikipedia</button>
+            <button onclick="launch('https://chatgpt.com', 'w6')">🤖 ChatGPT</button>
+            <button onclick="launch('https://gemini.google.com', 'w7')">✨ Gemini</button>
+            <button onclick="launch('https://play.geforcenow.com/', 'w8')">🎮 Geforce Now</button>
+            <button onclick="launch('https://linkedin.com', 'w9')">💼 LinkedIn</button>
+            <button onclick="launch('https://maps.google.com', 'w10')">📍 Google Maps</button>
+            <button onclick="launch('https://www.google.com/search?q=anime+vietsub', 'w11')">Google.AnimeVietsub</button>
+            <button onclick="launch('https://search.yahoo.com/search;_ylt=AwrOrKWC1V9pMQIA2llXNyoA;_ylc=X1MDMjc2NjY3OQRfcgMyBGZyA3NmcARmcjIDc2ItdG9wBGdwcmlkA2pVQzJPbDBGUmJ5bWJCVWF6U21QM0EEbl9yc2x0AzAEbl9zdWdnAzEwBG9yaWdpbgNzZWFyY2gueWFob28uY29tBHBvcwMwBHBxc3RyAwRwcXN0cmwDMARxc3RybAMxMgRxdWVyeQNhbmltZXZpZXRzdWIEdF9zdG1wAzE3Njc4ODgzODI-?p=animevietsub&fr=sfp&fr2=sb-top', 'w12')">Yahoo.AnimeVietsub</button>
+            <button onclick="launch('https://www.google.com/search?q=anime+Hay', 'w13')">Google.AnimeHay</button>
+            <button onclick="launch('https://www.google.com/search?q=Xem+Phim+Online+Phim+Moi+Vietsub', 'w14')">Google.PhimVietsub</button>
+
+        </div>
+    </div>
+
+    <script>
+        function launch(url, name) {
+            const width = 1000;
+            const height = 700;
+            const left = (window.screen.width / 2) - (width / 2);
+            const top = (window.screen.height / 2) - (height / 2);
+
+            let params = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`;
+            window.open(url, name, params);
+        }
+
+        function launchCustom() {
+            let val = document.getElementById('urlInput').value.trim();
+            if (!val) {
+                alert("Bạn chưa nhập địa chỉ web mà!");
+                return;
+            }
+            // Tự thêm giao thức nếu thiếu
+            if (!/^https?:\/\//i.test(val)) {
+                val = 'https://' + val;
+            }
+            launch(val, 'customWindow');
+        }
+
+        // Nhấn Enter để mở luôn cho tiện
+        document.getElementById('urlInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') launchCustom();
+        });
+    </script>
+</body>
+</html>

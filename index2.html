@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Giao dịch ATM Đơn giản</title>
+    <style>
+        body { font-family: sans-serif; background: #e9ecef; display: flex; justify-content: center; padding: 50px; }
+        .atm-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 350px; }
+        .balance-box { background: #28a745; color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 10px; }
+        button { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
+        .btn-deposit { background: #007bff; }
+        .btn-withdraw { background: #dc3545; }
+        #history { margin-top: 15px; font-size: 0.9em; color: #666; max-height: 100px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="atm-card">
+    <h3 style="text-align: center;">ATM Simulator</h3>
+    <div class="balance-box">
+        Số dư: <span id="balance">1,000,000</span> VNĐ
+    </div>
+    
+    <input type="number" id="amount" placeholder="Nhập số tiền..." min="0">
+    
+    <div class="btn-group">
+        <button class="btn-deposit" onclick="handleTransaction('deposit')">Nộp tiền</button>
+        <button class="btn-withdraw" onclick="handleTransaction('withdraw')">Rút tiền</button>
+    </div>
+
+    <div id="history">Lịch sử: <br></div>
+</div>
+
+<script>
+    let currentBalance = 1000000;
+
+    function handleTransaction(type) {
+        const amountInput = document.getElementById('amount');
+        const amount = parseInt(amountInput.value);
+        const history = document.getElementById('history');
+
+        if (isNaN(amount) || amount <= 0) {
+            alert("Vui lòng nhập số tiền hợp lệ!");
+            return;
+        }
+
+        if (type === 'deposit') {
+            currentBalance += amount;
+            history.innerHTML += `✅ Nạp: +${amount.toLocaleString()} VNĐ<br>`;
+        } else {
+            if (amount > currentBalance) {
+                alert("Số dư không đủ!");
+                return;
+            }
+            currentBalance -= amount;
+            history.innerHTML += `💸 Rút: -${amount.toLocaleString()} VNĐ<br>`;
+        }
+
+        document.getElementById('balance').innerText = currentBalance.toLocaleString();
+        amountInput.value = '';
+    }
+</script>
+
+</body>
+</html>

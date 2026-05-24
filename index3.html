@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Kiosk Transaction System</title>
+    <style>
+        :root { --primary: #004a99; --secondary: #6c757d; --success: #28a745; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #222; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .kiosk-screen { width: 450px; background: #f8f9fa; color: #333; border-radius: 5px; overflow: hidden; border: 8px solid #444; }
+        .header { background: var(--primary); color: white; padding: 20px; text-align: center; font-weight: bold; font-size: 1.2em; }
+        .display-area { padding: 30px; text-align: center; }
+        .balance-label { font-size: 0.9em; color: var(--secondary); }
+        .balance-value { font-size: 2.5em; font-weight: bold; margin: 10px 0; color: var(--primary); }
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 20px; background: #eee; }
+        .key { background: white; padding: 15px; text-align: center; border-radius: 5px; cursor: pointer; font-weight: bold; border: 1px solid #ccc; box-shadow: 0 2px 0 #ccc; }
+        .key:active { transform: translateY(2px); box-shadow: none; }
+        .action-btns { display: flex; }
+        .action-btn { flex: 1; padding: 20px; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 1.1em; }
+        .btn-deposit { background: var(--success); }
+        .btn-withdraw { background: #dc3545; }
+    </style>
+</head>
+<body>
+
+<div class="kiosk-screen">
+    <div class="header">HỆ THỐNG GIAO DỊCH TỰ ĐỘNG</div>
+    <div class="display-area">
+        <div class="balance-label">SỐ DƯ HIỆN TẠI</div>
+        <div class="balance-value" id="disp">0</div>
+        <div style="color: var(--secondary)">VNĐ</div>
+    </div>
+    
+    <div class="keypad">
+        <div class="key" onclick="addNum('1')">1</div><div class="key" onclick="addNum('2')">2</div><div class="key" onclick="addNum('3')">3</div>
+        <div class="key" onclick="addNum('4')">4</div><div class="key" onclick="addNum('5')">5</div><div class="key" onclick="addNum('6')">6</div>
+        <div class="key" onclick="addNum('7')">7</div><div class="key" onclick="addNum('8')">8</div><div class="key" onclick="addNum('9')">9</div>
+        <div class="key" style="background:#ffc107" onclick="clearDisp()">C</div><div class="key" onclick="addNum('0')">0</div><div class="key" style="background:#17a2b8; color:white">OK</div>
+    </div>
+
+    <div class="action-btns">
+        <button class="action-btn btn-deposit" onclick="process('NỘP')">NỘP TIỀN</button>
+        <button class="action-btn btn-withdraw" onclick="process('RÚT')">RÚT TIỀN</button>
+    </div>
+</div>
+
+<script>
+    let input = "";
+    function addNum(n) { input += n; updateDisp(); }
+    function clearDisp() { input = ""; updateDisp(); }
+    function updateDisp() { document.getElementById('disp').innerText = input === "" ? "0" : parseInt(input).toLocaleString(); }
+    function process(type) {
+        if(input === "") return;
+        alert(`Đang xử lý giao dịch ${type}: ${parseInt(input).toLocaleString()} VNĐ... \n[Hệ thống vận hành trên nền tảng Windows 10 LTSC ổn định]`);
+        clearDisp();
+    }
+</script>
+
+</body>
+</html>

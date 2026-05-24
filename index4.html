@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hệ thống POS & In Hóa Đơn</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #3498db; --success: #27ae60; --bg: #ecf0f1; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); display: flex; height: 100vh; }
+        
+        /* Giao diện chính */
+        .product-section { flex: 2; padding: 20px; overflow-y: auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .card { background: white; padding: 15px; border-radius: 10px; text-align: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .card:active { background: #eee; }
+
+        .cart-section { flex: 1; background: white; border-left: 2px solid #ddd; display: flex; flex-direction: column; }
+        .cart-header { padding: 20px; background: var(--primary); color: white; font-weight: bold; }
+        .cart-items { flex: 1; padding: 15px; overflow-y: auto; }
+        .cart-item { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .cart-footer { padding: 20px; border-top: 2px solid #eee; }
+        .btn-pay { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; font-weight: bold; }
+
+        /* Vùng in hóa đơn (Ẩn trên trình duyệt) */
+        #receipt-print { display: none; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #receipt-print, #receipt-print * { visibility: visible; }
+            #receipt-print { 
+                display: block !important; 
+                position: absolute; left: 0; top: 0; width: 80mm; 
+                padding: 10px; color: #000; font-family: 'Courier New', Courier, monospace; 
+            }
+            .receipt-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+            .receipt-table { width: 100%; font-size: 14px; }
+            .text-right { text-align: right; }
+            .receipt-footer { border-top: 1px dashed #000; margin-top: 10px; padding-top: 10px; text-align: center; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="product-section">
+    <h3>DANH MỤC SẢN PHẨM</h3>
+    <div class="grid" id="product-grid"></div>
+</div>
+
+<div class="cart-section">
+    <div class="cart-header">🛒 ĐƠN HÀNG</div>
+    <div class="cart-items" id="cart-items"></div>
+    <div class="cart-footer">
+        <div style="display:flex; justify-content:space-between; font-size:1.5em; font-weight:bold; margin-bottom:10px;">
+            <span>TỔNG:</span> <span id="grand-total">0đ</span>
+        </div>
+        <button class="btn-pay" onclick="prepareAndPrint()">IN HÓA ĐƠN & THANH TOÁN</button>
+    </div>
+</div>
+
+<div id="receipt-print">
+    <div class="receipt-header">
+        <h2 style="margin:0">CỬA HÀNG TIỆN LỢI</h2>
+        <p style="margin:5px 0">Đường 2.5, Cầu Giấy, Hà Nội</p>
+        <p>HÓA ĐƠN BÁN LẺ</p>
+        <p id="receipt-date"></p>
+    </div>
+    <table class="receipt-table" id="receipt-table">
+        </table>
+    <div class="receipt-footer">
+        <h3 id="receipt-total"></h3>
+        <p>Cảm ơn Quý khách - Hẹn gặp lại!</p>
+        <p>Powered by Windows 10 LTSC Stable</p>
+    </div>
+</div>
+
+<script>
+    const products = [
+        { id: 1, name: "Sữa tươi 1L", price: 35000 },
+        { id: 2, name: "Bánh quy bơ", price: 45000 },
+        { id: 3, name: "Nước khoáng", price: 10000 },
+        { id: 4, name: "Mì tôm", price: 5000 }
+    ];
+    let cart = [];
+
+    function renderProducts() {
+        document.getElementById('product-grid').innerHTML = products.map(p => `
+            <div class="card" onclick="addToCart(${p.id})">
+                <strong>${p.name}</strong><br>
+                <span style="color:green">${p.price.toLocaleString()}đ</span>
+            </div>
+        `).join('');
+    }
+
+    function addToCart(id) {
+        const p = products.find(i => i.id === id);
+        const item = cart.find(i => i.id === id);
+        item ? item.qty++ : cart.push({...p, qty: 1});
+        updateCart();
+    }
+
+    function updateCart() {
+        const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+        document.getElementById('cart-items').innerHTML = cart.map(i => `
+            <div class="cart-item">
+                <span>${i.name} x${i.qty}</span>
+                <span>${(i.price * i.qty).toLocaleString()}đ</span>
+            </div>
+        `).join('');
+        document.getElementById('grand-total').innerText = total.toLocaleString() + "đ";
+    }
+
+    function prepareAndPrint() {
+        if(cart.length === 0) return alert("Giỏ hàng trống!");
+
+        // 1. Điền dữ liệu vào mẫu hóa đơn ẩn
+        const now = new Date();
+        document.getElementById('receipt-date').innerText = "Ngày: " + now.toLocaleString();
+        
+        let rows = `<tr><th align="left">SP</th><th align="center">SL</th><th align="right">T.Tiền</th></tr>`;
+        let total = 0;
+        cart.forEach(i => {
+            total += i.price * i.qty;
+            rows += `<tr><td>${i.name}</td><td align="center">${i.qty}</td><td align="right">${(i.price * i.qty).toLocaleString()}</td></tr>`;
+        });
+        
+        document.getElementById('receipt-table').innerHTML = rows;
+        document.getElementById('receipt-total').innerText = "TỔNG CỘNG: " + total.toLocaleString() + "đ";
+
+        // 2. Gọi lệnh in
+        window.print();
+
+        // 3. Reset giỏ hàng
+        cart = [];
+        updateCart();
+    }
+
+    renderProducts();
+</script>
+
+</body>
+</html>

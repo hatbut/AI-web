@@ -18,7 +18,7 @@ main{max-width:680px;margin:0 auto;padding:5vh 20px 40px}
 h1{font:800 clamp(3rem,13vw,5.5rem)/1 Unbounded,"Arial Black",Impact,sans-serif;letter-spacing:-.04em;text-align:center;margin:0 0 .5rem}
 h1 span{color:var(--acc)}
 h1 b{font:inherit}
-:lang(zh) h1,:lang(ko) h1,:lang(ja) h1{letter-spacing:0}
+:lang(zh) h1,:lang(ko) h1,:lang(ja) h1,:lang(hi) h1,:lang(th) h1{letter-spacing:0;line-height:1.25}
 #cap{margin:0 0 2rem;min-height:1.5em;text-align:center;color:var(--mut)}
 .box{display:flex;gap:8px;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:8px}
 .box:focus-within{border-color:var(--acc)}
@@ -93,9 +93,9 @@ const nl=(navigator.language||"").slice(0,2);$("lang").value=L[s.l]?s.l:L[nl]?nl
 function render(){
   const all=words(),w=all.slice(0,MAX),k=$("lang").value,T=L[k];
   document.documentElement.lang=k==="pt"?"pt-BR":k;
-  const c=["zh","ko","ja"].includes(k);
+  const c=["zh","ko","ja","hi","th"].includes(k);
   $("lg").textContent=document.title=c?T[2]:"Search";
-  $("cap").textContent=c||k==="en"?"":"Search: "+T[2];
+  $("cap").textContent=c||k==="en"?"":T[2];
   $("q").placeholder=T[1];$("go").textContent=T[2];
   $("tl").textContent=$("tab").checked?T[3]:T[4];
   $("cnt").textContent=T[5].replace("{n}",all.length).replace("{m}",MAX)+(all.length>MAX?` (${T[6]})`:"");

@@ -13,9 +13,13 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:680px;margin:0 auto;padding:14vh 20px 40px}
-h1{font:800 clamp(3rem,13vw,5.5rem)/1 Unbounded,"Arial Black",Impact,sans-serif;letter-spacing:-.04em;text-align:center;margin:0 0 2.2rem}
+main{max-width:680px;margin:0 auto;padding:5vh 20px 40px}
+.lang{text-align:right;margin-bottom:7vh}
+h1{font:800 clamp(3rem,13vw,5.5rem)/1 Unbounded,"Arial Black",Impact,sans-serif;letter-spacing:-.04em;text-align:center;margin:0 0 .5rem}
 h1 span{color:var(--acc)}
+h1 b{font:inherit}
+:lang(zh) h1,:lang(ko) h1,:lang(ja) h1{letter-spacing:0}
+#cap{margin:0 0 2rem;min-height:1.5em;text-align:center;color:var(--mut)}
 .box{display:flex;gap:8px;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:8px}
 .box:focus-within{border-color:var(--acc)}
 input[type=text]{flex:1;min-width:0;border:0;background:none;color:inherit;font:inherit;font-size:1.15rem;padding:10px 12px;outline:0}
@@ -43,7 +47,9 @@ code{display:block;font:.9rem/1.5 ui-monospace,Menlo,Consolas,monospace;color:va
 </head>
 <body>
 <main>
-  <h1>Search<span>.</span></h1>
+  <div class="lang"><select id="lang"></select></div>
+  <h1><b id="lg">Search</b><span>.</span></h1>
+  <p id="cap"></p>
   <div class="box">
     <input type="text" id="q" placeholder="Type something to search…" autocomplete="off" autofocus aria-label="Search words">
     <button id="go">Search</button>
@@ -63,16 +69,42 @@ const $=s=>document.getElementById(s),MAX=32;
 const lab=i=>(i>25?String.fromCharCode(64+i/26|0):"")+String.fromCharCode(65+i%26); // A..Z, AA, AB…
 const words=()=>$("q").value.trim().split(/\s+/).filter(Boolean);
 const link=w=>$("eng").value+w.map(encodeURIComponent).join("+");
-try{const s=JSON.parse(localStorage.getItem("sx")||"{}");if("t"in s)$("tab").checked=s.t;if(s.e)$("eng").value=s.e}catch(e){}
+// Translations: [language name, placeholder, button, new tab, same tab, count, extra note, aria words, aria engine, aria language]
+const L={
+en:["English","Type something to search…","Search","New tab","Same tab","{n} of {m} words","extra ignored","Search words","Search engine","Language"],
+zh:["中文","输入要搜索的内容…","搜索","新标签页","当前标签页","{n} / {m} 个词","多余部分已忽略","搜索词","搜索引擎","语言"],
+es:["Español","Escribe lo que quieras buscar…","Buscar","Nueva pestaña","Misma pestaña","{n} de {m} palabras","se ignora el resto","Palabras de búsqueda","Buscador","Idioma"],
+pt:["Português (Brasil)","Digite o que você quer buscar…","Buscar","Nova guia","Mesma guia","{n} de {m} palavras","o excedente é ignorado","Palavras da busca","Mecanismo de busca","Idioma"],
+de:["Deutsch","Suchbegriffe eingeben…","Suchen","Neuer Tab","Gleicher Tab","{n} von {m} Wörtern","Überschuss wird ignoriert","Suchwörter","Suchmaschine","Sprache"],
+fr:["Français","Saisissez votre recherche…","Rechercher","Nouvel onglet","Même onglet","{n} sur {m} mots","le surplus est ignoré","Mots de recherche","Moteur de recherche","Langue"],
+th:["ไทย","พิมพ์สิ่งที่ต้องการค้นหา…","ค้นหา","แท็บใหม่","แท็บเดิม","{n} จาก {m} คำ","คำส่วนเกินจะถูกข้าม","คำค้นหา","เสิร์ชเอนจิน","ภาษา"],
+id:["Bahasa Indonesia","Ketik yang ingin dicari…","Cari","Tab baru","Tab yang sama","{n} dari {m} kata","kelebihan diabaikan","Kata pencarian","Mesin pencari","Bahasa"],
+ko:["한국어","검색할 내용을 입력하세요…","검색","새 탭","현재 탭","{n} / {m} 단어","초과분은 무시됩니다","검색어","검색 엔진","언어"],
+ja:["日本語","検索したい言葉を入力…","検索","新しいタブ","同じタブ","{n} / {m} 語","超過分は無視されます","検索ワード","検索エンジン","言語"],
+vi:["Tiếng Việt","Nhập nội dung cần tìm…","Tìm kiếm","Tab mới","Cùng tab","{n} / {m} từ","bỏ qua phần dư","Từ khóa tìm kiếm","Công cụ tìm kiếm","Ngôn ngữ"],
+nl:["Nederlands","Typ om te zoeken…","Zoeken","Nieuw tabblad","Zelfde tabblad","{n} van {m} woorden","overschot wordt genegeerd","Zoekwoorden","Zoekmachine","Taal"],
+it:["Italiano","Scrivi cosa cercare…","Cerca","Nuova scheda","Stessa scheda","{n} di {m} parole","il resto viene ignorato","Parole di ricerca","Motore di ricerca","Lingua"],
+da:["Dansk","Skriv det, du vil søge efter…","Søg","Ny fane","Samme fane","{n} af {m} ord","overskydende ignoreres","Søgeord","Søgemaskine","Sprog"],
+hi:["हिन्दी","खोजने के लिए कुछ लिखें…","खोजें","नया टैब","इसी टैब में","{n} / {m} शब्द","अतिरिक्त शब्द छोड़ दिए जाएँगे","खोज शब्द","सर्च इंजन","भाषा"]};
+$("lang").replaceChildren(...Object.entries(L).map(([k,v])=>new Option(v[0],k)));
+let s={};try{s=JSON.parse(localStorage.getItem("sx")||"{}")}catch(e){}
+if("t"in s)$("tab").checked=s.t;if(s.e)$("eng").value=s.e;
+const nl=(navigator.language||"").slice(0,2);$("lang").value=L[s.l]?s.l:L[nl]?nl:"en"; // saved choice, else browser language, else English
 function render(){
-  const all=words(),w=all.slice(0,MAX);
-  $("tl").textContent=$("tab").checked?"New tab":"Same tab";
-  $("cnt").textContent=all.length>MAX?`${all.length} of ${MAX} words (extra ignored)`:`${all.length} of ${MAX} words`;
+  const all=words(),w=all.slice(0,MAX),k=$("lang").value,T=L[k];
+  document.documentElement.lang=k==="pt"?"pt-BR":k;
+  const c=["zh","ko","ja"].includes(k);
+  $("lg").textContent=document.title=c?T[2]:"Search";
+  $("cap").textContent=c||k==="en"?"":"Search: "+T[2];
+  $("q").placeholder=T[1];$("go").textContent=T[2];
+  $("tl").textContent=$("tab").checked?T[3]:T[4];
+  $("cnt").textContent=T[5].replace("{n}",all.length).replace("{m}",MAX)+(all.length>MAX?` (${T[6]})`:"");
+  $("q").setAttribute("aria-label",T[7]);$("eng").setAttribute("aria-label",T[8]);$("lang").setAttribute("aria-label",T[9]);
   $("cnt").classList.toggle("over",all.length>MAX);
   $("out").hidden=!w.length;
   $("url").textContent=link(w);
   $("map").replaceChildren(...w.map((x,i)=>{const s=document.createElement("span"),b=document.createElement("b");b.textContent=lab(i);s.append(b,x);return s}));
-  try{localStorage.setItem("sx",JSON.stringify({t:$("tab").checked,e:$("eng").value}))}catch(e){}
+  try{localStorage.setItem("sx",JSON.stringify({t:$("tab").checked,e:$("eng").value,l:$("lang").value}))}catch(e){}
 }
 function go(){
   const w=words().slice(0,MAX);if(!w.length)return;
